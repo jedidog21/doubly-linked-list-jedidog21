@@ -1,37 +1,65 @@
+import java.util.HashMap;
+
 public class DoublyLinkedList<E> implements List{
     private Node<E> header = null;
+    private int capacity = 0;
     private int s = 0;
-    public DoublyLinkedList(){
+    private HashMap<Node<E>, E> hashMap = null;
+    public DoublyLinkedList(int cap){
+        capacity = cap;
         header = null;
+        hashMap = new HashMap<>();
     }
 
-    public DoublyLinkedList(E elment){
+    public DoublyLinkedList(E elment, int cap){
+        capacity = cap;
         header = new Node<E>(elment);
         s++;
+        hashMap = new HashMap<>();
+        hashMap.put(header, elment);
     }
 
     @Override
     public void add(Object element) {
         s++;
+        Node<E> prev = null;
         if(header == null){
             header = new Node<E>((E) element);
+            hashMap.put(header, (E) element);
             return;
         }
-        Node<E> next = header;
-        while (next.getNextNode() != null){
-            next = next.getNextNode();
+        if (s+1 <= capacity) {
+            prev = new Node<E>((E) element);
+            prev.setNextNode(header);
+            header.setPrevNode(prev);
+            header = prev;
+            hashMap.put(header, (E) element);
         }
-        next.setNextNode(new Node<E>((E) element, next));
+        else {
+            Node<E> next = header;
+            for (int i = 0; i < s-1; i++){
+                next = next.getNextNode();
+            }
+            hashMap.remove(next.getNextNode());
+            next.setNextNode(null);
+            s--;
+            prev = new Node<E>((E) element);
+            prev.setNextNode(header);
+            header.setPrevNode(prev);
+            header = prev;
+            hashMap.put(header, (E) element);
+        }
     }
 
     @Override
     public void add(int i, Object element) throws IndexOutOfBoundsException {
-        if (i > s)
+        if (i > s || i < 0)
             throw new IndexOutOfBoundsException();
         s++;
         Node<E> after = null;
         if (header == null){
             header = new Node<E>((E) element);
+            hashMap.put(header, (E) element);
             return;
         }
         Node<E> next = header;
@@ -40,6 +68,7 @@ public class DoublyLinkedList<E> implements List{
             next.setPrevNode(after);
             after.setNextNode(next);
             header = next.getPrevNode();
+            hashMap.put(header, (E) element);
             return;
         }
         while(i != 0 && next.getNextNode() != null){
@@ -47,9 +76,11 @@ public class DoublyLinkedList<E> implements List{
             i--;
         }
         after = new Node<E>((E)element, next.getPrevNode());
-        after.getPrevNode().setNextNode(after);
+        if (next.getPrevNode() !=  null)
+            after.getPrevNode().setNextNode(after);
         after.setNextNode(next);
         next.setPrevNode(after);
+        hashMap.put(after, (E)element);
     }
 
     @Override
@@ -60,6 +91,7 @@ public class DoublyLinkedList<E> implements List{
             next = next.getNextNode();
         }
         Object val = next.getValue();
+        hashMap.remove(next);
         next.setPrevNode(null);
         return (val);
 
@@ -67,16 +99,20 @@ public class DoublyLinkedList<E> implements List{
 
     @Override
     public Object remove(int i) throws IndexOutOfBoundsException {
-        if (i > s)
+        if (i > s-1)
             throw new IndexOutOfBoundsException();
         s--;
-        Node<E> next = header;
-        int count = i;
-        while (count > 0){
-            next = next.getNextNode();
-            count--;
-        }
         Object val;
+        Node<E> next = header;
+        if (s == 0){
+            val = header.getValue();
+            header = null;
+            return val;
+        }
+        while (i > 0){
+            next = next.getNextNode();
+            i--;
+        }
         if (next.getNextNode() == null) {
             val = next.getValue();
             next.getPrevNode().setNextNode(null);
@@ -89,6 +125,7 @@ public class DoublyLinkedList<E> implements List{
             return val;
         }
         val = next.getValue();
+        hashMap.remove(next);
         next.getPrevNode().setNextNode(next.getNextNode());
         next.getNextNode().setPrevNode(next.getPrevNode());
         return val;
@@ -100,17 +137,21 @@ public class DoublyLinkedList<E> implements List{
         while (i > 0 && next.getNextNode() != null){
             next = next.getNextNode();
         }
-        return ((E)next.getValue());
+        return (hashMap.get(next));
     }
 
     @Override
     public void set(int i, Object element) throws IndexOutOfBoundsException {
         Node<E> next = header;
+        int j = i;
         while (i > 0 && next.getNextNode() != null){
             next = next.getNextNode();
             i--;
         }
         next.setValue((E)element);
+        hashMap.put(next, (E)element);
+        remove(j);
+        add(j, element);
     }
 
     @Override
@@ -126,14 +167,12 @@ public class DoublyLinkedList<E> implements List{
     }
     public String toString(){
         Node<E> next = header;
-        int count = 0;
-        String s = "[";
+        String string = "[";
         while (next.getNextNode() != null){
-            s += next.getValue() + ", ";
-            count++;
+            string += next.getValue() + ", ";
             next = next.getNextNode();
         }
-        s += next.getValue() + "]";
-        return (s);
+        string += next.getValue() + "]";
+        return (string);
     }
 }
